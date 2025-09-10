@@ -75,33 +75,25 @@ io.on("connection", (socket) => {
       socket.join(gameId);
       io.to(gameId).emit("gameStarted", {
         players: { white: game.player1, black: game.player2 },
-        fen: game.fen,
-        turn: game.currentTurn,
+        fen: game.fen, // 👈 Отправляем FEN
+        turn: game.currentTurn, // 👈 Отправляем turn
       });
     }
   );
 
   // Ход
-  socket.on(
-    "makeMove",
-    ({
-      gameId,
-      fen,
-      from,
-      to,
-    }: {
-      gameId: string;
-      fen: string;
-      from: string;
-      to: string;
-    }) => {
-      const game = games[gameId];
-      if (!game) return;
-      game.fen = fen;
-      game.currentTurn = game.currentTurn === "white" ? "black" : "white";
-      io.to(gameId).emit("moveMade", { from, to, fen, turn: game.currentTurn });
-    }
-  );
+  socket.on("makeMove", (data) => {
+    const { gameId, from, to, fen, turn } = data;
+    const game = games[gameId];
+    if (!game) return;
+
+    // Обновляем FEN и turn
+    game.fen = fen;
+    game.currentTurn = turn;
+
+    // Отправляем событие всем игрокам
+    io.to(gameId).emit("moveMade", { fen, turn });
+  });
 
   socket.on("disconnect", () => {
     console.log("Пользователь отключился:", socket.id);
